@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.moopi.mvc.service.user.UserDao">
+ 	
+<resultMap id="userSelectMap" type="user">
+		<result property="userId"			column="USER_ID"			jdbcType="VARCHAR"/>
+		<result property="password"			column="PWD"				jdbcType="VARCHAR"/>
+		<result property="userName"			column="USER_NAME"			jdbcType="VARCHAR"/>
+		<result property="phone"			column="PHONE"				jdbcType="VARCHAR"/>
+		<result property="birth"			column="BIRTH"				jdbcType="DATE"/>
+		<result property="age"				column="AGE"				jdbcType="NUMERIC"/>
+		<result property="gender"			column="GENDER"				jdbcType="VARCHAR"/>
+		<result property="joinPath"			column="JOIN_PATH"			jdbcType="CHAR"/>
+		<result property="regDate"			column="REGDATE"			jdbcType="DATE"/>
+		<result property="userRole"			column="USER_ROLE"			jdbcType="VARCHAR"/>
+		<result property="fullAddr"			column="FULL_ADDR"			jdbcType="VARCHAR"/>
+		<result property="addr"				column="ADDR"				jdbcType="VARCHAR"/>
+		<result property="nickname"			column="NICKNAME"			jdbcType="VARCHAR"/>
+		<result property="profileImage"		column="PROFILE_IMAGE"		jdbcType="VARCHAR"/>
+		<result property="profileContent"	column="PROFILE_CONTENT"	jdbcType="VARCHAR"/>
+		<result property="interestFirst"	column="INTEREST_FIRST"		jdbcType="NUMERIC"/>
+		<result property="interestSecond"	column="INTEREST_SECOND"	jdbcType="NUMERIC"/>
+		<result property="interestThird"	column="INTEREST_THIRD"		jdbcType="NUMERIC"/>
+		<result property="myhomeState"		column="MYHOME_STATE"		jdbcType="CHAR"/>
+		<result property="stateReason"		column="STATE_REASON"		jdbcType="VARCHAR"/>
+		<result property="stateRegdate"		column="STATE_REGDATE"		jdbcType="DATE"/>
+		<result property="coin"				column="COIN"				jdbcType="NUMERIC"/>
+		<result property="badge"			column="BADGE"				jdbcType="CHAR"/>
+		<result property="targetId"			column="FL_TARGET"			jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	
+	<resultMap id="userDataSelectMap" type="userData">
+		<result property="moopi"			column="moopi"			jdbcType="NUMERIC"/>
+		<result property="google"			column="google"				jdbcType="NUMERIC"/>
+		<result property="naver"			column="naver"			jdbcType="NUMERIC"/>
+		<result property="kakao"			column="kakao"				jdbcType="NUMERIC"/>
+		<result property="male"			column="male"				jdbcType="NUMERIC"/>
+		<result property="female"			column="female"				jdbcType="NUMERIC"/>
+	</resultMap>	
+
+
+	<insert id="addUser"			parameterType="user" >
+		INSERT 
+		INTO users( USER_ID, PWD, USER_NAME, PHONE, BIRTH, AGE, GENDER, JOIN_PATH, REGDATE, USER_ROLE, FULL_ADDR, ADDR, NICKNAME, INTEREST_FIRST, INTEREST_SECOND, INTEREST_THIRD, MYHOME_STATE, PROFILE_IMAGE )
+		VALUES ( #{userId}, #{password}, #{userName}, #{phone}, '2021-07-01', #{age}, #{gender}, 1, now(), 2, #{fullAddr}, #{addr}, #{nickname}, #{interestFirst}, #{interestSecond}, #{interestThird}, 0, #{profileImage});
+	</insert>
+	
+	<select id="getMyHome"			parameterType="user"		resultMap="userSelectMap">
+		SELECT
+			USER_ID, PROFILE_IMAGE, NICKNAME, PROFILE_CONTENT, INTEREST_FIRST, INTEREST_SECOND, INTEREST_THIRD
+		FROM users
+		WHERE USER_ID = #{userId};
+			<!--  팔로잉수, 팔로워 , PROFILE_CONTENT, 마이홈게시글 첨부파일, 마이홈게시글 내용, 마이홈게시글 좋아요 수, 모임무피 대표썸네일, 모임무피명 -->
+	</select>
+	
+	<select id="getUser"			parameterType="String" 		resultMap="userSelectMap">
+		SELECT 
+		USER_ID, USER_NAME, PWD, NICKNAME, PHONE, FULL_ADDR, ADDR, BIRTH, AGE, GENDER, REGDATE, JOIN_PATH, USER_ROLE, PROFILE_IMAGE, PROFILE_CONTENT,
+		x.INTEREST_NAME as INTEREST_FIRST, y.INTEREST_NAME as INTEREST_SECOND, z.INTEREST_NAME as INTEREST_THIRD, 
+		PROFILE_IMAGE, COIN, BADGE, MYHOME_STATE, STATE_REASON, STATE_REGDATE
+		FROM users LEFT OUTER JOIN INTEREST x 
+			ON INTEREST_FIRST = x.INTEREST_NO
+		    LEFT OUTER JOIN INTEREST y
+			ON INTEREST_SECOND = y.INTEREST_NO
+		    LEFT OUTER JOIN INTEREST z
+			ON INTEREST_THIRD = z.INTEREST_NO	 
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<update id="makeFlashCoin" parameterType="user">
+		UPDATE USERS
+		<set>
+			COIN = COIN -2
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<update id="joinFlashCoin" parameterType="user">
+		UPDATE USERS
+		<set>
+			COIN = COIN -1
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+
+	<update id="paymentUpdateCoin" parameterType="user">
+		UPDATE USERS
+		<set>
+			COIN = COIN + #{coin} 
+		</set>
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<select id="nicknameCheck"		parameterType="String"		resultType="int">
+		SELECT count(*)
+		FROM users
+		WHERE NICKNAME = #{nickname}
+	</select>
+	
+	<select id="userIdCheck" 		parameterType="String"		resultType="int">
+		SELECT count(*) 
+		FROM users 
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<select id="loginUser"			parameterType="String"		resultMap="userSelectMap">
+		SELECT
+			USER_ID, PWD, USER_ROLE, NICKNAME
+		FROM users
+		WHERE USER_ID = #{userId}
+	</select> 
+	
+	<select id="login"				parameterType="user"			resultMap="userSelectMap">
+		SELECT
+			USER_ID, PWD, USER_ROLE, NICKNAME
+		FROM users
+		WHERE USER_ID = #{userId}
+	</select>
+		
+	<!-- 아이디찾기 -->
+	<select id="getUserId"			parameterType="user" 		resultMap="userSelectMap">
+		SELECT USER_ID
+		FROM users
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- getId -->
+	<select id="getId"		parameterType="String"		resultMap="userSelectMap">
+		SELECT USER_ID
+		FROM users
+		WHERE PHONE = #{phone}
+	</select>
+	
+	<!--  2021-07-27 사용하는지 확인해봐야 함 -->
+	<!-- 모바일번호 변경 -->
+	<update id="updateUserPhone"			parameterType="user">
+		UPDATE users
+		<set>
+			PHONE = #{phone}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+<!-- 	<update id="updateUserView" 	parameterType="user">
+		UPDATE users
+		<set>
+			PHONE = #{phone},
+			PWD = #{password}
+		</set>
+		WHERE UWER_ID = #{userId};
+	</update> -->
+	
+	<!-- 프로필수정 -->
+	<update id="updateProfile"		parameterType="user">
+		UPDATE users
+		<set>
+			NICKNAME = #{nickname}, 
+			FULL_ADDR = #{fullAddr},
+			ADDR = #{addr}, 
+			PROFILE_IMAGE = #{profileImage}, 
+			INTEREST_FIRST = #{interestFirst},
+			INTEREST_SECOND= #{interestSecond},
+			INTEREST_THIRD = #{interestThird},
+			PROFILE_CONTENT = #{profileContent},
+			MYHOME_STATE = #{myhomeState}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	
+	<!-- *수정예정 / 관리자 전용 회원목록조회 / Coin이 있어야함 / 유저No, 유저아이디, 유저이름, 유저닉네임, 생년월일, 연령, 가입경로, 가입일자, 코인, 현재상태 -->
+	<select id="getUserList"  		parameterType="search"		resultMap="userSelectMap">
+		SELECT
+		*
+		FROM (SELECT
+				inner_table.* , @ROWNUM := @ROWNUM +1 AS RNUM
+                FROM( SELECT
+					USER_ID, USER_NAME, NICKNAME, BIRTH, AGE, JOIN_PATH, REGDATE, USER_ROLE, PROFILE_IMAGE,
+					x.INTEREST_NAME as INTEREST_FIRST, y.INTEREST_NAME as INTEREST_SECOND ,z.INTEREST_NAME as INTEREST_THIRD 
+					FROM users LEFT OUTER JOIN INTEREST x 	
+					ON INTEREST_FIRST = x.INTEREST_NO
+		   			 LEFT OUTER JOIN INTEREST y
+					ON INTEREST_SECOND = y.INTEREST_NO
+		   			 LEFT OUTER JOIN INTEREST z
+					ON INTEREST_THIRD = z.INTEREST_NO		
+					<where>
+						<if test="search.searchCondition != null">
+							<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+								AND USER_ID LIKE '%${search.searchKeyword}%'
+							</if>
+							<if test="search.searchCondition == 2 and search.searchKeyword !='' ">
+								AND NICKNAME LIKE '%${search.searchKeyword}%'
+							</if>
+						</if>
+						<if test="searchState == 2">
+							AND USER_ROLE = '2'
+						</if>
+						<if test="searchState == 3">
+							AND USER_ROLE = '3'
+						</if>
+					</where>
+					) inner_table, (select @rownum := 0) as R )tables
+				WHERE rnum between #{search.startRowNum} and #{search.endRowNum}  	
+	 </select>
+	 
+	 <select id="getTotalCount" 	parameterType="search"		resultType="int">
+		SELECT COUNT(*) FROM users
+					<where>
+						<if test="search.searchCondition != null">
+							<if test="search.searchCondition == 1 and search.searchKeyword !='' ">
+								AND NICKNAME LIKE '%${search.searchKeyword}%'
+							</if>
+							<if test="search.searchCondition == 2 and search.searchKeyword !='' ">
+								AND NICKNAME LIKE '%${search.searchKeyword}%'
+							</if>
+						</if>
+						<if test="searchState == 2">
+							AND USER_ROLE = '2'
+						</if>
+						<if test="searchState == 3">
+							AND USER_ROLE = '3'
+						</if>
+					</where>
+	</select>
+	
+	
+	<update id="updateUser" >
+		UPDATE users
+			<set>
+			<if test="type == 1">
+			 	PHONE = #{user.phone}
+			</if>
+			<if test="type == 2">
+			 	PWD = #{user.password}
+			</if>
+			<if test="type == 3">
+			 	NICKNAME = #{user.nickname}
+			</if>
+			<if test="type == 4">
+				PROFILE_CONTENT = #{user.profileContent}
+			</if>
+			<if test="type == 5">
+			 	FULL_ADDR = #{user.fullAddr},
+				ADDR= #{user.addr}
+			</if>
+			<if test="type == 6">
+			 	INTEREST_FIRST = #{user.interestFirst},
+				INTEREST_SECOND= #{user.interestSecond},
+				INTEREST_THIRD = #{user.interestThird}
+			</if>
+			<if test="type == 7">
+			 	MYHOME_STATE = #{user.myhomeState}
+			</if>
+			</set>
+		WHERE USER_ID = #{user.userId}
+	</update>
+	
+		
+	<!-- 비밀번호변경 -->
+	<update id="updateUserPwd"		parameterType="user">
+		UPDATE users
+			<set>
+			 	PWD = #{password}
+			</set>
+		WHERE USER_ID = #{userId}
+	</update>
+	
+	<!-- 1. 프로필이미지수정 -->
+	<update id="updateProfileImage"		parameterType="user">
+		UPDATE users
+		<set>
+			PROFILE_IMAGE = #{profileImage}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 1. 닉네임수정 -->
+	<update id="updateNickname"		parameterType="user">
+		UPDATE users
+		<set>
+			NICKNAME = #{nickname}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 2. 프로필수정 -->
+	<update id="updateContent"		parameterType="string">
+		UPDATE users
+		<set>
+			PROFILE_CONTENT = #{profileContent}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 3. 관심사수정 -->
+	<update id="updateInterest"		parameterType="user">
+		UPDATE users
+		<set>
+			INTEREST_FIRST = #{interestFirst},
+			INTEREST_SECOND= #{interestSecond},
+			INTEREST_THIRD = #{interestThird}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 4. 주소지수정 -->
+	<update id="updateAddress"		parameterType="user">
+		UPDATE users
+		<set>
+			FULL_ADDR = #{fullAddr},
+			ADDR= #{addr}
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 5. 마이홈상태수정 -->
+	<update id="updateMyhomeStat"		parameterType="user">
+		UPDATE users
+		<set>
+			MYHOME_STATE = #{myhomeState},
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+	
+	<!-- 6. 비밀번호수정(POST) -->
+	<update id="updateUserPWD"		parameterType="user">
+		UPDATE users
+		<set>
+			PWD = #{password},
+		</set>
+		WHERE USER_ID = #{userId};
+	</update>
+
+	<!-- 팔로우리스트 -->
+	
+	<insert id="addFollow" >
+		INSERT
+		INTO FOLLOW_LIKE
+		(USER_ID , FL_TARGET, FL_TYPE)
+		VALUES 
+		(#{userId} , #{target}, "2")
+	</insert>
+	
+	<select id="getFollow" resultMap="userSelectMap">
+		SELECT
+		u.user_id , u.nickname , u.profile_image
+		FROM FOLLOW_LIKE fl , USERS u
+		WHERE fl.fl_type in ('2')
+			AND fl.user_id  = u.user_id 
+			AND fl.user_id in (#{userId})
+			AND fl.fl_target in (#{target})
+	</select>
+			
+		
+	<select id="getFollowList"	resultMap="userSelectMap">
+		SELECT
+		fl.user_id , u.nickname , fl.fl_target, u.profile_image
+		FROM FOLLOW_LIKE fl , USERS u
+		<where>
+			fl.fl_type in ('2')
+			<if test="order == 1">
+				AND fl.fl_target = u.user_id
+                AND fl.user_id in (#{userId})
+			</if>
+			<if test="order == 2">
+				AND fl.user_id = u.user_id 
+                AND fl.fl_target in (#{userId})
+			</if>
+		</where>
+	</select>
+	
+	<delete id="deleteFollow">
+		DELETE
+		FROM FOLLOW_LIKE
+		WHERE user_id in (#{userId})
+			AND fl_target in (#{target})
+	</delete>
+	
+	<select id="getFollowCount" resultType="int">
+		SELECT
+			COUNT(*)				
+			FROM FOLLOW_LIKE fl , USERS u
+				<where>
+					fl.fl_type in ('2') <!-- 팔로잉 -->
+					<if test="order == 1">
+						AND fl.fl_target  = u.user_id 
+						AND fl.user_id in (#{userId})
+					</if>
+					<if test="order == 2"> <!-- 팔로워 -->
+						AND fl.user_id = u.user_id 
+						AND fl.fl_target in (#{userId})
+					</if>
+				</where>
+	</select>
+	
+	<!-- 회원블랙 / 4. 블랙회원, 블랙사유 -->
+	<select id="updateBlackUser"	parameterType="user">
+		UPDATE users
+		<set>
+			USER_ROLE = '4',
+			STATE_REASON = #{stateReason}
+		</set>
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	<!-- 회원탈퇴  / 5.탈퇴회원 6.탈퇴복구불가회원 --> 
+	 <select id="updateLeaveUser"	parameterType="user">
+	 	UPDATE users
+		<set>
+			USER_ROLE = '5',
+			STATE_REASON = #{stateReason}
+		</set>
+		WHERE USER_ID = #{userId}
+	</select>
+	
+	
+	<!-- 유저롤 변경 -->
+	<update id="updateUserRole"		parameterType="user">
+		UPDATE users
+			<set>
+			 	USER_ROLE = #{userRole}
+			 ,  STATE_REASON =  #{stateReason}
+			 ,  STATE_REGDATE = now()
+			</set>
+		WHERE USER_ID = #{userId}
+	</update>
+		
+		
+		
+		<!-- 차트 -->
+		<select id="getJoinPath"	resultMap="userDataSelectMap">
+		select
+		count(join_path) AS moopi,
+		(select
+		count(join_path)
+		from users
+		where join_path = 2) AS google,
+		(
+		select
+		count(join_path)
+		from users
+		where join_path = 3
+		)  AS naver,
+		(
+		select
+		count(join_path)
+		from users
+		where join_path = 4
+		) AS kakao
+		from users
+		where join_path = 1;
+		</select>
+		
+		<select id="getGenderData"	resultMap="userDataSelectMap">
+		select count(gender) AS male,
+		(
+		select count(gender) 
+		from users
+		where gender = 2
+		) AS female
+		from users
+		where gender = 1;
+		</select>
+		
+		
+		<select id="getAgeData"	resultMap="userDataSelectMap">
+		select count(age) AS twenties,
+		(
+		select count(age)
+		from users
+		where age between 30 and 39
+		) AS thirties,
+		(
+		select count(age)
+		from users
+		where age between 40 and 49
+		)AS forties,
+		(
+		select count(age)
+		from users
+		where age between 50 and 59
+		)AS fifties
+		from users
+		where age between 20 and 29;
+		</select>
+		
+		
+		<select id="getInterestData"	resultMap="userDataSelectMap">
+		SELECT
+		count(*) AS travel,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =2
+		or
+		interest_second =2
+		or
+		interest_third = 2
+		) AS sport,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =3
+		or
+		interest_second =3
+		or
+		interest_third = 3
+		) AS book,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =4
+		or
+		interest_second =4
+		or
+		interest_third = 4
+		) AS work,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =5
+		or
+		interest_second =5
+		or
+		interest_third = 5
+		) AS language,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =6
+		or
+		interest_second =6
+		or
+		interest_third = 6
+		) AS music,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =7
+		or
+		interest_second =7
+		or
+		interest_third = 7
+		) AS make,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =8
+		or
+		interest_second =8
+		or
+		interest_third = 8
+		) AS dance,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =9
+		or
+		interest_second =9
+		or
+		interest_third = 9
+		) AS friend,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =10
+		or
+		interest_second =10
+		or
+		interest_third = 10
+		) AS car,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =11
+		or
+		interest_second =11
+		or
+		interest_third = 11
+		) AS game,
+		(
+		SELECT
+		count(*)
+		from users
+		where interest_first =12
+		or
+		interest_second =12
+		or
+		interest_third = 12
+		) AS caffe
+		from users
+		where interest_first =1
+		or
+		interest_second =1
+		or
+		interest_third = 1
+		</select>
+</mapper>

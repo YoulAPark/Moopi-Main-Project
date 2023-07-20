@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+	<mapper namespace="com.moopi.mvc.service.reply.ReplyDao">   	
+ 	
+	<resultMap id="replySelectMap" type="reply">
+		<result property="replyNo" 			column="REPLY_NO" 		jdbcType="NUMERIC"/>
+		<result property="boardNo"			column="BD_NO" 			jdbcType="NUMERIC" />
+		<result property="replyContent" 	column="REPLY_CONTENT" 	jdbcType="VARCHAR" />
+		<result property="replyRegDate" 	column="REPLY_REGDATE" 	jdbcType="DATE" />
+		<result property="replyState" 		column="REPLY_STATE" 		jdbcType="CHAR" />
+
+		<association property="replyWriter"  javaType="user">
+			<id property="userId" 				column="USER_ID" 			jdbcType="VARCHAR"/>
+			<result property="profileImage"		column="PROFILE_IMAGE"		jdbcType="VARCHAR"/>
+			<result property="nickname"			column="NICKNAME"			jdbcType="VARCHAR"/>
+		</association>		
+	</resultMap>	
+	
+	<select id="getReplyList" parameterType="int" resultMap="replySelectMap">
+
+		SELECT
+			R.REPLY_CONTENT
+		  , R.REPLY_REGDATE
+		  , R.REPLY_STATE
+		  , R.REPLY_NO
+		  , U.USER_ID
+		  , U.NICKNAME
+		  , U.PROFILE_IMAGE
+		FROM
+			REPLY R
+		  , USERS U
+		WHERE
+			U.USER_ID = R.REPLY_WRITER
+		AND
+			R.REPLY_STATE = 1
+		AND
+			R.BD_NO = #{boardNo}
+	</select>
+	
+	<select id="getReply" parameterType="int" resultMap="replySelectMap" >
+
+		SELECT 
+			R.REPLY_NO
+		  , R.REPLY_CONTENT
+		  , R.REPLY_STATE
+		  , U.NICKNAME
+		  , U.PROFILE_IMAGE
+		  , R.REPLY_REGDATE
+		FROM 
+			REPLY R, USERS U
+		WHERE
+			R.REPLY_NO = #{replyNo}
+		AND
+			R.REPLY_WRITER = U.USER_ID
+	</select>
+	
+	<select id="updateReply" parameterType="reply" >
+
+	UPDATE 
+	REPLY SET 
+	  REPLY_CONTENT = #{reply.replyContent}
+    WHERE 
+      REPLY_NO = #{reply.replyNo}
+	</select>
+	
+	<select id="deleteReply" parameterType="int" >
+
+	UPDATE 
+	REPLY SET 
+	  REPLY_STATE = '2'
+	WHERE
+	  REPLY_NO = #{replyNo}
+	</select>
+	
+	<insert id="insertReply" parameterType="reply" 
+	useGeneratedKeys="true"  keyProperty="replyNo">
+		
+		INSERT INTO 
+		REPLY (
+		   BD_NO
+		 , REPLY_WRITER
+		 , REPLY_CONTENT
+		 , REPLY_REGDATE
+		 , REPLY_STATE
+		 ) VALUES (
+		   #{reply.boardNo}
+		 , #{reply.replyWriter.userId}
+		 , #{reply.replyContent}
+		 , NOW()
+		 , '1');
+	
+	</insert>	
+	
+	<select id="deleteReply2" parameterType="reply" >
+
+	UPDATE 
+	REPLY SET 
+	  REPLY_STATE = '3'
+	WHERE
+	  REPLY_NO = #{reply.replyNo}
+	</select>
+	
+	<select id="getReplyListAdmin" parameterType="int" resultMap="replySelectMap">
+
+		SELECT
+			R.REPLY_CONTENT
+		  , R.REPLY_REGDATE
+		  , R.REPLY_STATE
+		  , R.REPLY_NO
+		  , U.USER_ID
+		  , U.NICKNAME
+		  , U.PROFILE_IMAGE
+		FROM
+			REPLY R
+		  , USERS U
+		WHERE
+			U.USER_ID = R.REPLY_WRITER
+		AND
+			R.BD_NO = #{boardNo}
+	</select>
+	
+</mapper>

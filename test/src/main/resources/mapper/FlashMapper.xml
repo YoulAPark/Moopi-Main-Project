@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.moopi.mvc.service.flash.FlashDao">
+ 	
+	<resultMap id="flashSelectMap" type="flash">
+		<result property="flashNo" 			column="FLASH_NO" 			jdbcType="NUMERIC"/>
+		<result property="flashName"		column="FLASH_NAME" 		jdbcType="VARCHAR" />
+		<result property="flashConstructor.userId"	column="FLASH_CONSTRUCTOR" 		jdbcType="VARCHAR" />
+		<result property="flashConstructor.nickname"	column="nickname" 		jdbcType="VARCHAR" />
+		<result property="flashConstructor.profileImage"	column="PROFILE_IMAGE" 		jdbcType="VARCHAR" />
+		<result property="flashContent" 	column="FLASH_CONTENT" 		jdbcType="VARCHAR" />
+		<result property="flashFile" 		column="FLASH_FILE" 		jdbcType="VARCHAR" />
+		<result property="flashRegdate" 	column="FLASH_REGDATE" 		jdbcType="DATE" />
+		<result property="flashTime" 		column="FLASH_TIME" 		jdbcType="DATE" />
+		<result property="flashCurrentCount" column="FLASH_CURRENT_COUNT" 	jdbcType="NUMERIC"  />
+		<result property="flashMaxCount" 	column="FLASH_MAX_COUNT" 	jdbcType="NUMERIC" />
+		<result property="flashAddr" 		column="FLASH_ADDR" 		jdbcType="VARCHAR" />
+		<result property="detailAddr"       column="DETAIL_ADDR"		jdbcType="VARCHAR" />
+		<result property="flashState" 		column="FLASH_STATE" 		jdbcType="CHAR" />
+		<result property="flashInterest" 	column="INTEREST_NAME" 	jdbcType="NUMERIC" />
+		<result property="flashMapX" 		column="FLASH_MAP_X" 		jdbcType="VARCHAR" />
+		<result property="flashMapY" 		column="FLASH_MAP_Y" 		jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="meetingFlashMemberSelectMap" type="meetingFlashMember">
+		<result property="meflNo" 			column="MEFL_NO" 		jdbcType="NUMERIC"/>
+		<result property="meflId.userId"	column="MEFL_ID" 		jdbcType="VARCHAR" />
+		<result property="meflId.nickname"	column="NICKNAME" 		jdbcType="VARCHAR" />
+		<result property="meflId.addr"		column="ADDR" 		jdbcType="VARCHAR" />
+		<result property="targetNo" 		column="TARGET_NO" 		jdbcType="NUMERIC" />
+		<result property="joinRegDate" 		column="JOIN_REGDATE" 			jdbcType="DATE" /> 
+		<result property="joinState" 		column="JOIN_STATE" 			jdbcType="CHAR" />
+		<result property="meflType" 		column="MEFL_TYPE" 			jdbcType="CHAR" />
+	</resultMap>
+	
+	<insert id="joinFlash">
+	 	INSERT
+		INTO MEETING_FLASH_MEMBER(
+		MEFL_ID, TARGET_NO, JOIN_REGDATE , JOIN_STATE, MEFL_TYPE
+		)
+		VALUES( 
+		#{userId}, #{flashNo}, now(), '1','2'
+		)
+	 </insert>
+	 
+	 <update	id="leaveFlash">
+	   	UPDATE MEETING_FLASH_MEMBER
+	   	<set>
+	   		JOIN_STATE 	= '2'
+	   	</set>
+	   	WHERE MEFL_ID = #{userId} 
+	   	AND TARGET_NO = #{flashNo}
+	 </update>
+	
+	<select id="getJoinFlashList" parameterType="int" resultMap="meetingFlashMemberSelectMap">
+		SELECT
+		m.MEFL_ID, u.NICKNAME, u.ADDR, u.PROFILE_IMAGE, u.BADGE ,
+		m.TARGET_NO, m.JOIN_REGDATE, m.JOIN_STATE
+		FROM USERS u INNER JOIN MEETING_FLASH_MEMBER m ON u.USER_ID = m.MEFL_ID
+		WHERE m.TARGET_NO = #{targetNo} and m.JOIN_STATE = '1'
+	
+	</select>
+
+
+	<select id="getFlash" parameterType="int" resultMap="flashSelectMap">
+		SELECT
+			FLASH_NO, FLASH_NAME, FLASH_CONTENT, FLASH_FILE, FLASH_CONSTRUCTOR, FLASH_REGDATE,
+			FLASH_TIME, FLASH_CURRENT_COUNT, FLASH_MAX_COUNT, FLASH_ADDR, DETAIL_ADDR, FLASH_STATE, INTEREST_NAME,
+			FLASH_MAP_X, FLASH_MAP_Y , NICKNAME	, PROFILE_IMAGE	
+			FROM FLASH , users ,INTEREST
+			WHERE FLASH.FLASH_CONSTRUCTOR = USERS.user_id
+				AND FLASH.FLASH_INTEREST = INTEREST.INTEREST_NO
+				AND FLASH_NO = #{flashNo}	
+	</select>
+	
+	<insert id="addFlash" parameterType="flash" useGeneratedKeys="true" keyProperty="flashNo">
+		INSERT
+		INTO FLASH(FLASH_NO, FLASH_NAME, FLASH_CONTENT, FLASH_FILE, FLASH_CONSTRUCTOR, FLASH_REGDATE,
+			FLASH_TIME, FLASH_CURRENT_COUNT, FLASH_MAX_COUNT, FLASH_ADDR, FLASH_STATE, FLASH_INTEREST,
+			FLASH_MAP_X, FLASH_MAP_Y , DETAIL_ADDR)
+		VALUES(#{flashNo}, #{flashName}, #{flashContent}, #{flashFile}, #{flashConstructor.userId},
+		now(), #{flashTime}, '1', #{flashMaxCount}, #{flashAddr}, '1', 
+		#{flashInterest}, #{flashMapX}, #{flashMapY} , #{detailAddr})
+	</insert>
+	
+	<update id="updateFlash" parameterType="flash">
+		UPDATE FLASH
+		<set>
+			FLASH_NAME = #{flashName},
+			FLASH_FILE = #{flashFile},
+			FLASH_CONTENT = #{flashContent},
+			FLASH_ADDR = #{flashAddr},
+			DETAIL_ADDR = #{detailAddr},
+			FLASH_MAX_COUNT = #{flashMaxCount},
+			FLASH_TIME = #{flashTime},
+			FLASH_INTEREST = #{flashInterest}
+		</set>
+		WHERE FLASH_NO = #{flashNo}
+	</update>
+	
+	<update id="joinFlashUpdate" parameterType="flash">
+		UPDATE FLASH
+		<set>
+			FLASH_CURRENT_COUNT = FLASH_CURRENT_COUNT +1
+		</set>
+		WHERE FLASH_NO = #{flashNo}
+	</update>
+	
+	<select id="getFlashList" parameterType="search" resultMap="flashSelectMap">
+		SELECT
+			*
+			FROM(SELECT
+					inner_table.* , @ROWNUM := @ROWNUM +1 AS RNUM
+			FROM(SELECT
+			
+			FLASH_NO, FLASH_NAME, FLASH_CONTENT, FLASH_FILE, FLASH_CONSTRUCTOR, FLASH_REGDATE,
+			FLASH_TIME, FLASH_CURRENT_COUNT, FLASH_MAX_COUNT, FLASH_ADDR, DETAIL_ADDR , FLASH_STATE, FLASH_INTEREST,
+			FLASH_MAP_X, FLASH_MAP_Y , INTEREST_NAME , NICKNAME , PROFILE_IMAGE 
+			FROM FLASH F , INTEREST I , USERS u
+			<where>
+			F.FLASH_INTEREST = I.INTEREST_NO AND F.FLASH_CONSTRUCTOR = u.USER_ID
+			<if test="searchCondition !=null">
+				<if test="searchCondition == 1 and interestNo !='' ">
+				AND FLASH_INTEREST = #{interestNo}
+				</if>
+				<if test="searchCondition == 2 and addr !='' ">
+				AND FLASH_ADDR = #{addr}
+				</if>
+				<if test="searchCondition == 3 and searchKeyword !='' ">
+				AND FLASH_NAME like '%${searchKeyword}%' <!-- OR I.INTEREST_NAME like '%${searchKeyword}%'  -->
+				</if>
+				<if test="searchCondition == 4 and searchKeyword !='' ">
+				AND FLASH_ADDR = #{addr} AND FLASH_INTEREST = #{interestNo}
+				</if> 
+				<if test="searchCondition == 5 and searchKeyword !='' ">
+				AND USER_ID like '%${searchKeyword}%'
+				</if> 
+				<if test="searchCondition == 6 and searchKeyword !='' ">
+				AND NICKNAME like '%${searchKeyword}%'
+				</if> 
+			</if>
+			</where>
+			) inner_table, (select @rownum := 0) as R )tables
+			WHERE rnum between #{startRowNum} and #{endRowNum}
+	</select>
+	
+	<select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT count(*)
+			FROM FLASH
+			<if test="searchCondition != null">
+			<where>
+			<if test="searchCondition == 1 and searchKeyword !='' ">
+			FLASH_INTEREST = #{searchKeyword}
+			</if>
+			<if test="searchCondition == 2 and searchKeyword !='' ">
+			FLASH_ADDR = #{searchKeyword}
+			</if>
+			</where>
+			</if> 					
+	 </select>
+	
+</mapper> 

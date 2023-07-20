@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+						"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.moopi.mvc.service.coin.CoinDao">
+ 	
+	<resultMap id="coinSelectMap" type="coin">
+		<result property="coinNo" 		column="COIN_NO" 			jdbcType="NUMERIC"/>
+		<result property="coinRegdate"	column="COIN_REGDATE" 		jdbcType="DATE" />
+		<result property="coinRole"		column="COIN_ROLE" 			jdbcType="VARCHAR" />
+		<result property="coinCount" 	column="COIN_COUNT" 		jdbcType="NUMERIC" />
+		<result property="coinUser.userId" 		column="USER_ID" 	jdbcType="VARCHAR" />
+		<result property="flash.flashConstructor.userId" 	column="FLASH_CONSTRUCTOR" 	jdbcType="VARCHAR" />
+		<result property="flash.flashName" 		column="FLASH_NAME" 	jdbcType="VARCHAR" />
+		<result property="flash.flashNo" 		column="FLASH_NO" 	jdbcType="NUMERIC" />
+	
+	</resultMap>
+	
+	
+	<select id="coinHistory" parameterType="coin" resultMap="coinSelectMap">
+		SELECT 
+		f.FLASH_NAME, f.FLASH_CONSTRUCTOR, c.USER_ID, c.COIN_REGDATE, c.COIN_ROLE, 
+		c.COIN_COUNT FROM COIN c INNER JOIN FLASH f on c.FLASH_NO = f.FLASH_NO
+		WHERE c.USER_ID = #{coinUser.userId}	
+	</select>
+
+	<select id="getCoin" parameterType="int" resultMap="coinSelectMap">
+		SELECT
+			COIN_NO, COIN_REGDATE, COIN_ROLE, COIN_COUNT, USER_ID,
+			FLASH_NO
+			FROM COIN
+		WHERE COIN_NO = #{coinNo}	
+	</select>
+	
+ 	<insert id="addCoin" parameterType="coin">
+		INSERT
+			INTO COIN (COIN_NO, COIN_REGDATE, COIN_ROLE, COIN_COUNT, USER_ID, FLASH_NO)
+			VALUES(#{coinNo}, now(), '생성', '2', #{coinUser.userId},
+					#{flash.flashNo})
+	</insert>
+	
+	<insert id="joinCoin" parameterType="coin">
+		INSERT
+			INTO COIN (COIN_NO, COIN_REGDATE, COIN_ROLE, COIN_COUNT, USER_ID, FLASH_NO)
+			VALUES(#{coinNo}, now(), '참가', '1', #{coinUser.userId},
+					#{flash.flashNo})
+	</insert>
+	
+	<update id="updateCoin" parameterType="Coin">
+		UPDATE PAYMENT
+		<set>
+			COIN_REGDATE = #{coinRegdate},
+			COIN_ROLE = #{coinRole},
+			COIN_COUNT = #{coinCount}
+			FLASH_NO = #{flash.flashNo}
+		</set>
+		WHERE COIN_NO = #{coinNo}
+	</update>
+	
+	<select id="getCoinList" parameterType="search" resultMap="coinSelectMap">
+		SELECT
+			COIN_NO, COIN_REGDATE, COIN_ROLE, COIN_COUNT, USER_ID,
+			FLASH_NO
+			FROM COIN
+			<if test="searchCondition !=null">
+			<where>
+			<if test="searchCondition == 1 and searchKeyword !='' ">
+			USER_ID = #{searchKeyword}
+			</if>
+			<if test="searchCondition == 2 and searchKeyword !='' ">
+			COIN_REGDATE = #{searchKeyword}
+			</if>
+			</where>
+			</if>
+	</select>
+	
+	<select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT count(*)
+			FROM COIN
+			<if test="searchCondition != null">
+			<where>
+			<if test="searchCondition == 1 and searchKeyword !='' ">
+			PAYMENT_ROLE = #{searchKeyword}
+			</if>
+			<if test="searchCondition == 2 and searchKeyword !='' ">
+			PAYMENT_PRICE = #{searchKeyword}
+			</if>
+			</where>
+			</if> 					
+	 </select>
+	
+</mapper> 
